@@ -10,7 +10,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "LouisLun\\LaravelJkopay\\Tests\\": "tests"
+            "LouisLun\\LaravelJkopay\\Tests\\": "tests/"
         }
     },
     "authors": [

@@ -1,5 +1,5 @@
 <?php
-namespace LouisLun\Jkopay;
+namespace Louislun\LaravelJkopay;
 
 use Illuminate\Support\ServiceProvider;
 
