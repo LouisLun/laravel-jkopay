@@ -1,8 +1,11 @@
 <?php
-namespace Louislun\LaravelJkopay;
+namespace LouisLun\LaravelJkopay;
 
+use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Request;
 use LouisLun\LaravelJkopay\Exceptions\JkopayException;
+use LouisLun\LaravelJkopay\Response;
 
 class Jkopay
 {
@@ -14,7 +17,18 @@ class Jkopay
     /**
      * 測試環境host
      */
-    const SANDBOX_API_HOST = 'https://';
+    const SANDBOX_API_HOST = 'https://onlinepay.jkopay.com';
+
+    /**
+     * jkospay api uri list
+     *
+     * @var array
+     */
+    protected static $apiUris = [
+        'request' => '/platform/entry',
+        'refund' => '/platform/refund',
+        'details' => '/platform/inquiry',
+    ];
 
     /**
      * config
@@ -100,13 +114,131 @@ class Jkopay
         return $this;
     }
 
+    /**
+     * request API
+     *
+     * @param array $params
+     * @return \LouisLun\LaravelJkopay\Response
+     */
+    public function request(array $params)
+    {
+        return $this->requestHandler('POST', $this->getAPIUri('request'), $params, [
+            'connect_timeout' => 5,
+            'timeout' => 20,
+        ]);
+    }
+
+    /**
+     * refund API
+     *
+     * @param array $params
+     * @return \LouisLun\LaravelJkopay\Response
+     */
+    public function refund(array $params)
+    {
+        return $this->requestHandler('POST', $this->getAPIUri('refund'), $params, [
+            'connect_timeout' => 5,
+            'timeout' => 20,
+        ]);
+    }
+
+    /**
+     * details API
+     *
+     * @param array $params
+     * @return \LouisLun\LaravelJkopay\Response
+     */
+    public function details(array $params)
+    {
+        return $this->requestHandler('GET', $this->getAPIUri('details'), $params, [
+            'connect_timeout' => 5,
+            'timeout' => 20,
+        ]);
+    }
+
+    /**
+     * signature
+     *
+     * @param string $secretKey JKOS SECRET KEY
+     * @param string $queryOrBody request payload
+     * @return string
+     */
     public static function getAuthSignature($secretKey, $queryOrBody)
     {
         return hash_hmac('sha256', $queryOrBody, $secretKey);
     }
 
+    /**
+     * sender
+     *
+     * @return \GuzzleHttp\Client
+     */
     public function client()
     {
         return $this->httpClient;
+    }
+
+    /**
+     * get api uri
+     *
+     * @param string $key
+     * @return string
+     */
+    protected function getAPIUri($key)
+    {
+        return self::$apiUris[$key];
+    }
+
+    /**
+     * request handler
+     *
+     * @param string $method method
+     * @param string $uri
+     * @param array $params
+     * @param array $options
+     * @return \LouisLun\LaravelJkopay\Response
+     */
+    public function requestHandler($method, $uri, array $params = [], $options = [])
+    {
+        if (!isset($params['store_id'])) {
+            $params['store_id'] = $this->storeID;
+        }
+
+        $headers = [];
+        $authParams = '';
+        $url = $uri;
+        $body = '';
+        if ($method == 'GET') {
+            $rows = [];
+            foreach ($params as $key => $val) {
+                if (is_array($val)) {
+                    $rows[] = $key . '=' . implode(',', $val);
+                } else {
+                    $rows[] = $key . '=' . $val;
+                }
+            }
+            $authParams = implode('&', $rows);
+            $url = "$uri?$authParams";
+        } else {
+            $authParams = json_encode($params);
+            $body = $authParams;
+        }
+
+        // set Digest
+        $headers['Digest'] = 'sha-256=' . $this->getAuthSignature($this->secretKey, $authParams);
+
+        $stats = null;
+        $options['on_stats'] = function (\GuzzleHttp\TransferStats $transferStats) use (&$stats) {
+            $stats = $transferStats;
+        };
+
+        $request = new Request($method, $url, $headers, $body);
+        try {
+            $response = $this->client()->send($request, $options);
+        } catch (\GuzzleHttp\Exception\ConnectException $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e->getPrevious(), $e->getHandlerContext());
+        }
+
+        return new Response($response, $stats);
     }
 }
