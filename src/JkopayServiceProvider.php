@@ -13,7 +13,7 @@ class JkopayServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(Jkopay::class, function ($app) {
-            return new Jkopay($app['config']['linepay']);
+            return new Jkopay($app['config']['jkopay']);
         });
     }
 
