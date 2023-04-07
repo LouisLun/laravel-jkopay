@@ -4,6 +4,7 @@ namespace LouisLun\LaravelJkopay;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
+use LouisLun\LaravelJkopay\Exceptions\JkopayConnectException;
 use LouisLun\LaravelJkopay\Exceptions\JkopayException;
 use LouisLun\LaravelJkopay\Response;
 
@@ -236,7 +237,7 @@ class Jkopay
         try {
             $response = $this->client()->send($request, $options);
         } catch (\GuzzleHttp\Exception\ConnectException $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e->getPrevious(), $e->getHandlerContext());
+            throw new JkopayConnectException($e->getMessage(), $e->getCode(), $e->getPrevious(), $e->getHandlerContext());
         }
 
         return new Response($response, $stats);
