@@ -27,21 +27,4 @@ class JkopayTest extends TestCase
             )
         );
     }
-
-    public function test_curl()
-    {
-        $client = new Jkopay([
-            'storeID' => '14ba2382-c1bd-11ed-8c25-0050568403ed',
-            'apiKey' => 'f9e22c563f31538aefc231e7d3890ac540dca5aed64afaa64c21e8b551ceaee4',
-            'secretKey' => 'a40d3d181d1a4a0e01804db62f08419656639cd124187d7bee13f9ae992e81bd',
-            // sandbox mode
-            'isSandbox' => true,
-        ]);
-
-        $response = $client->details([
-            'platform_order_ids' => [87,88],
-        ]);
-
-        dd($response->toArray());
-    }
 }
