@@ -227,6 +227,7 @@ class Jkopay
 
         // set Digest
         $headers['Digest'] = 'sha-256=' . $this->getAuthSignature($this->secretKey, $authParams);
+        $headers['Api-Key'] = $this->apiKey;
 
         $stats = null;
         $options['on_stats'] = function (\GuzzleHttp\TransferStats $transferStats) use (&$stats) {
