@@ -13,12 +13,12 @@ class Jkopay
     /**
      * 正式站host
      */
-    const API_HOST = 'https://';
+    const API_HOST = 'https://onlinepay.jkopay.com';
 
     /**
      * 測試環境host
      */
-    const SANDBOX_API_HOST = 'https://onlinepay.jkopay.com';
+    const SANDBOX_API_HOST = 'https://uat-onlinepay.jkopay.app';
 
     /**
      * jkospay api uri list
@@ -123,6 +123,7 @@ class Jkopay
      */
     public function request(array $params)
     {
+        $params['store_id'] = $this->storeID;
         return $this->requestHandler('POST', $this->getAPIUri('request'), $params, [
             'connect_timeout' => 5,
             'timeout' => 20,
@@ -201,10 +202,6 @@ class Jkopay
      */
     public function requestHandler($method, $uri, array $params = [], $options = [])
     {
-        if (!isset($params['store_id'])) {
-            $params['store_id'] = $this->storeID;
-        }
-
         $headers = [];
         $authParams = '';
         $url = $uri;
@@ -226,7 +223,7 @@ class Jkopay
         }
 
         // set Digest
-        $headers['Digest'] = 'sha-256=' . $this->getAuthSignature($this->secretKey, $authParams);
+        $headers['Digest'] = $this->getAuthSignature($this->secretKey, $authParams);
         $headers['Api-Key'] = $this->apiKey;
 
         $stats = null;
